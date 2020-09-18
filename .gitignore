@@ -1,1 +1,11 @@
 /test
+/node_modules
+/src/ai/__pycache__
+
+# testing
+/coverage
+
+# production
+/build
+
+/app
