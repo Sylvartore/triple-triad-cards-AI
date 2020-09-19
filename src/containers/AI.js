@@ -20,7 +20,7 @@ const Get =
     [-1, -1, -1, 0, 1, 2, 3, 4, 5],
     [1, 2, -1, 4, 5, -1, 7, 8, -1],
     [3, 4, 5, 6, 7, 8, -1, -1, -1]]
-const Counter = [2, 0, 3, 1]
+const Counter = [2, 3, 0, 1]
 
 class AI {
 
@@ -33,11 +33,30 @@ class AI {
     }
 
     takeoverSettlement = (cardIndex, tileIndex, state, cardId) => {
-
-        this.basicRule(cardIndex, tileIndex, state, cardId)
+        this.ruleSame(cardIndex, tileIndex, state, cardId)
+        this.ruleBasic(cardIndex, tileIndex, state, cardId)
     }
 
-    basicRule = (cardIndex, tileIndex, state, cardId) => {
+    ruleSame = (cardIndex, tileIndex, state, cardId) => {
+        let res = []
+        for (let direction = 0; direction < 4; direction++) {
+            let targetTileIndex = Get[direction][tileIndex]
+            if (targetTileIndex === -1) continue
+            let targetCardIndex = state.tilesCard[targetTileIndex]
+            if (targetCardIndex === -1) continue
+            if (cardAttributes[cardId[cardIndex]][direction] ===
+                cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
+                res.push(targetCardIndex)
+            }
+        }
+        if (res.length > 1) {
+            for (const targetCardIndex of res) {
+                state.cardsOwner[targetCardIndex] = state.current
+            }
+        }
+    }
+
+    ruleBasic = (cardIndex, tileIndex, state, cardId) => {
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
             if (targetTileIndex === -1) continue
@@ -115,20 +134,20 @@ class AI {
         return res
     }
 
-    clone(state) {
-        return {
-            current: state.current,
-            tilesCard: [...state.tilesCard],
-            cardsOwner: [...state.cardsOwner]
-        }
-    }
-
     terminateTest(state) {
         return state.tilesCard.every(cardIndex => cardIndex !== -1)
     }
 
     evaluateScore(state, side) {
         return state.cardsOwner.reduce((acc, cur) => acc + (cur === side ? 1 : 0), -5)
+    }
+
+    clone(state) {
+        return {
+            current: state.current,
+            tilesCard: [...state.tilesCard],
+            cardsOwner: [...state.cardsOwner]
+        }
     }
 }
 
