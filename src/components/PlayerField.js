@@ -10,9 +10,9 @@ class PlayerField extends Component {
                     {globalStates =>
                         globalStates.state.cards.filter(card =>
                             card.owner === this.props.player && !card.onBoard).map(card => (
-                                <img key={card.uid} alt={card.name} id={card.uid}
+                                <img key={card.index} alt={card.name} id={card.index}
                                     src={`./cards/imgs/${card.id}.png`}
-                                    className={globalStates.state.selected === card.uid ?
+                                    className={globalStates.state.selected === card.index ?
                                         "selected" : "unselected"}
                                     onClick={e => globalStates.select(e)}
                                 />
