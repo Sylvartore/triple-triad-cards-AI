@@ -1,3 +1,4 @@
+// import { spawn } from 'child_process';
 
 const cardAttributes =
     [[8, 8, 2, 3],
@@ -148,6 +149,18 @@ class AI {
             cardsOwner: [...state.cardsOwner]
         }
     }
+
+    // getCardInfo = () => {
+    //     return new Promise((success, nosuccess) => {
+    //         const pyprog = spawn('node', ['./a.js']);
+    //         pyprog.stdout.on('data', (data) => {
+    //             success(data);
+    //         });
+    //         pyprog.stderr.on('data', (data) => {
+    //             nosuccess(data);
+    //         });
+    //     });
+    // }
 }
 
 const instance = new AI();

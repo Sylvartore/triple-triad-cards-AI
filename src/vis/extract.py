@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -14,7 +15,7 @@ def extractCard():
                   'yellow': {'Lower': np.array([15, 40, 46]), 'Upper': np.array([18, 160, 255])}, }
 
     # pil_image = windowCapture()
-    pil_image = Image.open("./test/2.png")
+    pil_image = Image.open("../vis/test/2.png")
     cv_image = pil_image.convert('RGB')
     frame = np.array(cv_image)[:, :, ::-1]
 
@@ -58,6 +59,7 @@ def extractCard():
         # if w/h > 0.75 and w/h < 0.85 and area > 100:
         if w/h > 0.78 and w/h < 0.80 and area > minArea and area < maxArea:
             cardCoodinates.append([x, y, w, h])
+            # print(w/h, " : ", area)
 
     rankCardsFromLeft = np.argsort([row[0] for row in cardCoodinates])
     player0 = [cardCoodinates[index] for index in rankCardsFromLeft[:5]]
@@ -66,15 +68,18 @@ def extractCard():
     cardImages = [[pil_image.crop((x, y, x+w, y+h)) for x, y, w, h in player0],
                   [pil_image.crop((x, y, x+w, y+h)) for x, y, w, h in player1]]
 
-    if __name__ == "__main__":
+    if __name__ == "__main__" or len(cardCoodinates) != 10:
+        fig, ax = plt.subplots(1)
+        plt.imshow(pil_image)
+        if len(cardCoodinates) != 10:
+            plt.title("Card Extraction Failed!")
         for x, y, w, h in cardCoodinates:
-            fig, ax = plt.subplots(1)
-            plt.imshow(pil_image)
             rect = patches.Rectangle(
                 (x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
-
-    plt.show()
+        plt.show()
+        pil_image.save("../../debug/failed_img_" +
+                       str(len(os.listdir("../../debug/"))) + ".png", "PNG")
     return cardImages
 
 

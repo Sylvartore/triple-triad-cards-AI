@@ -2,6 +2,8 @@
 /src/vis/__pycache__
 /src/vis/test
 /src/vis/model/__pycache__
+/debug/*
+
 # testing
 /coverage
 

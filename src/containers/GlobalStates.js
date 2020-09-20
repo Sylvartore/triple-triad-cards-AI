@@ -1,8 +1,5 @@
 import { Container } from 'unstated';
 import AI from './AI';
-
-// import React from 'react';
-let data;
 class Card {
     constructor(id, name, left, up, right, down, onBoard, owner, index) {
         this.name = name;
@@ -20,6 +17,10 @@ class Tile {
         this.card = null
     }
 }
+
+
+let data;
+
 class GlobalStates extends Container {
     state = {
         cards: [
@@ -46,14 +47,31 @@ class GlobalStates extends Container {
             new Tile(6),
             new Tile(7),
             new Tile(8),
-        ]
+        ],
     };
 
-    init = () => {
+    load = () => {
+        let start = Date.now()
+        AI.getCardInfo().then(data => console.log(data))
+        let end = Date.now()
+        console.log((start - end) / 1000)
         let cards = [
         ]
         this.setState({
-            cards: cards
+            cards: cards,
+            selected: -1,
+            current: -1,
+            tiles: [
+                new Tile(0),
+                new Tile(1),
+                new Tile(2),
+                new Tile(3),
+                new Tile(4),
+                new Tile(5),
+                new Tile(6),
+                new Tile(7),
+                new Tile(8),
+            ]
         })
     }
 

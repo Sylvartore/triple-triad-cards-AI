@@ -8,7 +8,7 @@ from extract import extractCard
 
 
 def indentifyCard(cardImages):
-    h5f = h5py.File('./model/model.h5', 'r')
+    h5f = h5py.File('../vis/model/model.h5', 'r')
     feats = h5f['dataset_1'][:]
     imgNames = h5f['dataset_2'][:]
     h5f.close()
