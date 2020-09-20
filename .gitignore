@@ -1,7 +1,7 @@
-/test
 /node_modules
-/src/ai/__pycache__
-
+/src/vis/__pycache__
+/src/vis/test
+/src/vis/model/__pycache__
 # testing
 /coverage
 

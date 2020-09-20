@@ -81,10 +81,13 @@ class GlobalStates extends Container {
 
 
     a = () => {
-        let start = Date.now()
         data = this.packState()
-        console.log(AI.getBestMove(data, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
-        console.log((Date.now() - start) / 1000)
+        let start = Date.now()
+        // for (let i = 0; i < 10; i++)
+        let best = AI.getBestMove(data, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let end = Date.now()
+        console.log((end - start) / 1000)
+        console.log(best)
     }
     b = () => {
         data = this.packState()

@@ -81,7 +81,6 @@ class AI {
                 best = [move[0], move[1]];
             }
         }
-        console.log(max)
         return best;
     }
 
