@@ -8,11 +8,10 @@ from extract import extractCard
 
 
 def indentifyCard(cardImages):
-    h5f = h5py.File('../vis/model/model.h5', 'r')
+    h5f = h5py.File('./src/vis/model/model.h5', 'r')
     feats = h5f['dataset_1'][:]
     imgNames = h5f['dataset_2'][:]
     h5f.close()
-
     cards = [[], []]
     model = VGGNet()
     for playerNo in range(len(cardImages)):
@@ -28,7 +27,7 @@ def indentifyCard(cardImages):
                 fig, (ax1, ax2) = plt.subplots(1, 2)
                 ax1.imshow(image)
                 ax1.axis('off')
-                ax2.imshow(Image.open("../../public/cards/imgs/" + name))
+                ax2.imshow(Image.open("./public/cards/imgs/" + name))
                 ax2.axis('off')
                 plt.show()
     return cards

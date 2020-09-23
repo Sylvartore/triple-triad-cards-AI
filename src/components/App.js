@@ -11,15 +11,22 @@ class App extends Component {
         <LoadBoard />
         <Subscribe to={[GlobalStates]}>
           {globalStates =>
-            <button onClick={() => globalStates.a()}>
-              Debug a
+            <button onClick={() => globalStates.getBestMove()}>
+              Get Best Move
             </button>
           }
         </Subscribe>
         <Subscribe to={[GlobalStates]}>
           {globalStates =>
-            <button onClick={() => globalStates.b()}>
-              Debug b
+            <button onClick={() => globalStates.getBestMove(0)}>
+              AI play as Blue
+            </button>
+          }
+        </Subscribe>
+        <Subscribe to={[GlobalStates]}>
+          {globalStates =>
+            <button onClick={() => globalStates.getBestMove(1)}>
+              AI play as Red
             </button>
           }
         </Subscribe>

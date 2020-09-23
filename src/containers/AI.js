@@ -1,21 +1,3 @@
-// import { spawn } from 'child_process';
-
-const cardAttributes =
-    [[8, 8, 2, 3],
-    [1, 4, 8, 8],
-    [1, 8, 8, 4],
-    [8, 1, 8, 8],
-    [8, 1, 4, 8],
-    [6, 2, 6, 6],
-    [3, 4, 2, 5],
-    [5, 2, 5, 2],
-    [4, 3, 3, 3],
-    [6, 7, 3, 2]]
-
-const Left = 0
-const Up = 1
-const Right = 2
-const Down = 3
 const Get =
     [[-1, 0, 1, -1, 3, 4, -1, 6, 7],
     [-1, -1, -1, 0, 1, 2, 3, 4, 5],
@@ -25,20 +7,20 @@ const Counter = [2, 3, 0, 1]
 
 class AI {
 
-    stateTransition(cardIndex, tileIndex, state, cardId) {
+    stateTransition(cardIndex, tileIndex, state, cardId, cardAttributes) {
         if (state.tilesCard[tileIndex] !== -1) return state
         state.tilesCard[tileIndex] = cardIndex
         // state.playerFields[state.current].remove(cardIndex)
-        this.takeoverSettlement(cardIndex, tileIndex, state, cardId)
+        this.takeoverSettlement(cardIndex, tileIndex, state, cardId, cardAttributes)
         state.current = state.current ? 0 : 1
     }
 
-    takeoverSettlement = (cardIndex, tileIndex, state, cardId) => {
-        this.ruleSame(cardIndex, tileIndex, state, cardId)
-        this.ruleBasic(cardIndex, tileIndex, state, cardId)
+    takeoverSettlement = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
+        this.ruleSame(cardIndex, tileIndex, state, cardId, cardAttributes)
+        this.ruleBasic(cardIndex, tileIndex, state, cardId, cardAttributes)
     }
 
-    ruleSame = (cardIndex, tileIndex, state, cardId) => {
+    ruleSame = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
         let res = []
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
@@ -57,7 +39,7 @@ class AI {
         }
     }
 
-    ruleBasic = (cardIndex, tileIndex, state, cardId) => {
+    ruleBasic = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
             if (targetTileIndex === -1) continue
@@ -70,28 +52,28 @@ class AI {
         }
     }
 
-    getBestMove(state, cardId) {
+    getBestMove(state, cardId, cardAttributes) {
         let max = -5;
         let best = null;
         for (const move of this.getAllMoves(state)) {
             let copy = this.clone(state)
-            this.stateTransition(move[0], move[1], copy, cardId)
-            let utility = this.min(copy, -5, 5, cardId, state.current);
+            this.stateTransition(move[0], move[1], copy, cardId, cardAttributes)
+            let utility = this.min(copy, -5, 5, cardId, state.current, cardAttributes);
             if (max === -5 || utility > max) {
                 max = utility;
                 best = [move[0], move[1]];
             }
         }
-        return best;
+        return { move: best, score: max };
     }
 
-    min(state, alpha, beta, cardId, side) {
+    min(state, alpha, beta, cardId, side, cardAttributes) {
         if (this.terminateTest(state)) return this.evaluateScore(state, side);
         let value = 5;
         for (const move of this.getAllMoves(state)) {
             let copy = this.clone(state)
-            this.stateTransition(move[0], move[1], copy, cardId)
-            let utility = this.max(copy, alpha, beta, cardId, side);
+            this.stateTransition(move[0], move[1], copy, cardId, cardAttributes)
+            let utility = this.max(copy, alpha, beta, cardId, side, cardAttributes);
             if (utility < value) value = utility;
             if (utility <= alpha) return utility;
             if (utility < beta) beta = utility;
@@ -99,13 +81,13 @@ class AI {
         return value;
     }
 
-    max(state, alpha, beta, cardId, side) {
+    max(state, alpha, beta, cardId, side, cardAttributes) {
         if (this.terminateTest(state)) return this.evaluateScore(state, side);
         let value = -5;
         for (const move of this.getAllMoves(state)) {
             let copy = this.clone(state)
-            this.stateTransition(move[0], move[1], copy, cardId)
-            let utility = this.min(copy, alpha, beta, cardId, side);
+            this.stateTransition(move[0], move[1], copy, cardId, cardAttributes)
+            let utility = this.min(copy, alpha, beta, cardId, side, cardAttributes);
             if (utility > value) value = utility;
             if (utility >= beta) return utility;
             if (utility > alpha) alpha = utility;

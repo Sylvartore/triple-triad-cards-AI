@@ -14,8 +14,8 @@ def extractCard():
                   'blue': {'Lower': np.array([100, 80, 46]), 'Upper': np.array([124, 255, 255])},
                   'yellow': {'Lower': np.array([15, 40, 46]), 'Upper': np.array([18, 160, 255])}, }
 
-    # pil_image = windowCapture()
-    pil_image = Image.open("../vis/test/2.png")
+    pil_image = windowCapture()
+    # pil_image = Image.open("../vis/test/2.png")
     cv_image = pil_image.convert('RGB')
     frame = np.array(cv_image)[:, :, ::-1]
 
@@ -78,8 +78,10 @@ def extractCard():
                 (x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
         plt.show()
-        pil_image.save("../../debug/failed_img_" +
-                       str(len(os.listdir("../../debug/"))) + ".png", "PNG")
+        if len(cardCoodinates) != 10:
+            pil_image.save("./debug/failed_img_" +
+                           str(len(os.listdir("./debug/"))) + ".png", "PNG")
+            return []
     return cardImages
 
 
