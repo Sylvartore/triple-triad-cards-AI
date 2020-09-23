@@ -10,13 +10,13 @@ class AI {
     stateTransition(cardIndex, tileIndex, state, cardId, cardAttributes) {
         if (state.tilesCard[tileIndex] !== -1) return state
         state.tilesCard[tileIndex] = cardIndex
-        // state.playerFields[state.current].remove(cardIndex)
         this.takeoverSettlement(cardIndex, tileIndex, state, cardId, cardAttributes)
         state.current = state.current ? 0 : 1
     }
 
     takeoverSettlement = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
-        this.ruleSame(cardIndex, tileIndex, state, cardId, cardAttributes)
+        // this.ruleSame(cardIndex, tileIndex, state, cardId, cardAttributes)
+        this.rulePlus(cardIndex, tileIndex, state, cardId, cardAttributes)
         this.ruleBasic(cardIndex, tileIndex, state, cardId, cardAttributes)
     }
 
@@ -36,6 +36,25 @@ class AI {
             for (const targetCardIndex of res) {
                 state.cardsOwner[targetCardIndex] = state.current
             }
+        }
+    }
+
+    rulePlus = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
+        let map = {}
+        for (let direction = 0; direction < 4; direction++) {
+            let targetTileIndex = Get[direction][tileIndex]
+            if (targetTileIndex === -1) continue
+            let targetCardIndex = state.tilesCard[targetTileIndex]
+            if (targetCardIndex === -1) continue
+            let key = cardAttributes[cardId[cardIndex]][direction] +
+                cardAttributes[cardId[targetCardIndex]][Counter[direction]]
+            if (map.hasOwnProperty(key)) {
+                state.cardsOwner[targetCardIndex] = state.current
+                state.cardsOwner[map[key]] = state.current
+            } else {
+                map[key] = targetCardIndex
+            }
+
         }
     }
 

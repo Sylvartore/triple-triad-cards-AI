@@ -143,7 +143,7 @@ class GlobalStates extends Container {
 
 
 
-    getBestMove = (playerNo = -1) => {
+    getBestMove = (playerNo = this.state.current) => {
         if (playerNo !== -1) {
             this.state.current = playerNo
         } else {
@@ -160,20 +160,9 @@ class GlobalStates extends Container {
         this.setState(this.unpackState(packedState))
     }
 
-    // b = () => {
-    //     packedState = this.packState()
-    //     console.log(`score for 0: ${AI.evaluateScore(packedState, 0)}`)
-    //     console.log(`score for 1: ${AI.evaluateScore(packedState, 1)}`)
-    // }
-
     packState = () => {
         return {
             current: this.state.current,
-            // playerFields:
-            //     [this.state.cards.filter(card =>
-            //         card.owner === 0).map(card => card.id),
-            //     this.state.cards.filter(card =>
-            //         card.owner === 1).map(card => card.id)],
             tilesCard: this.state.tiles.map(tile => tile.card ? tile.card.index : -1),
             cardsOwner: this.state.cards.map(card => card.owner)
         }
