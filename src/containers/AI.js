@@ -9,7 +9,8 @@ class AI {
 
     stateTransition(cardIndex, tileIndex, state, cardId, cardAttributes) {
         if (state.tilesCard[tileIndex] !== -1) return state
-        state.tilesCard[tileIndex] = cardIndex
+        state.tilesCard[tileIndex] = cardIndex;
+        state.cardsTile[cardIndex] = tileIndex;
         this.takeoverSettlement(cardIndex, tileIndex, state, cardId, cardAttributes)
         state.current = state.current ? 0 : 1
     }
@@ -40,7 +41,7 @@ class AI {
     }
 
     rulePlus = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
-        let map = {}
+        let map = new Map()
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
             if (targetTileIndex === -1) continue
@@ -48,13 +49,33 @@ class AI {
             if (targetCardIndex === -1) continue
             let key = cardAttributes[cardId[cardIndex]][direction] +
                 cardAttributes[cardId[targetCardIndex]][Counter[direction]]
-            if (map.hasOwnProperty(key)) {
-                state.cardsOwner[targetCardIndex] = state.current
-                state.cardsOwner[map[key]] = state.current
+            if (map.has(key)) {
+                if (state.cardsOwner[targetCardIndex] !== state.current) {
+                    state.cardsOwner[targetCardIndex] = state.current
+                    this.combo(targetCardIndex, targetTileIndex, state, cardId, cardAttributes)
+                }
+                let stored = map.get(key)
+                if (state.cardsOwner[stored[0]] !== state.current) {
+                    state.cardsOwner[stored[0]] = state.current
+                    this.combo(stored[0], stored[1], state, cardId, cardAttributes)
+                }
             } else {
-                map[key] = targetCardIndex
+                map.set(key, [targetCardIndex, targetTileIndex])
             }
+        }
+    }
 
+    combo = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
+        for (let direction = 0; direction < 4; direction++) {
+            let targetTileIndex = Get[direction][tileIndex]
+            if (targetTileIndex === -1) continue
+            let targetCardIndex = state.tilesCard[targetTileIndex]
+            if (targetCardIndex === -1 || state.cardsOwner[targetCardIndex] === state.current) continue
+            if (cardAttributes[cardId[cardIndex]][direction] >
+                cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
+                state.cardsOwner[targetCardIndex] = state.current
+                this.combo(targetCardIndex, targetTileIndex, state, cardId, cardAttributes)
+            }
         }
     }
 
@@ -115,24 +136,16 @@ class AI {
     }
 
     getAllMoves(state) {
-        let empty = []
-        let hasCard = []
-        for (let i = 0; i < 9; i++) {
-            if (state.tilesCard[i] === -1) empty.push(i)
-            else hasCard.push(i)
-        }
-        let cards = []
-        for (let i = 0; i < 10; i++) {
-            if (state.cardsOwner[i] === state.current && hasCard.every(index => state.tilesCard[index] !== i))
-                cards.push(i)
-        }
         let res = []
-        for (const card of cards) {
-            for (const tile of empty) {
-                res.push([card, tile])
+        for (let i = 0; i < 10; i++) {
+            if (state.cardsOwner[i] === state.current && state.cardsTile[i] === -1) {
+                for (let j = 0; j < 9; j++) {
+                    if (state.tilesCard[j] === -1)
+                        res.push([i, j]);
+                }
             }
         }
-        return res
+        return res;
     }
 
     terminateTest(state) {
@@ -146,22 +159,11 @@ class AI {
     clone(state) {
         return {
             current: state.current,
-            tilesCard: [...state.tilesCard],
-            cardsOwner: [...state.cardsOwner]
+            cardsOwner: [...state.cardsOwner],
+            cardsTile: [...state.cardsTile],
+            tilesCard: [...state.tilesCard]
         }
     }
-
-    // getCardInfo = () => {
-    //     return new Promise((success, nosuccess) => {
-    //         const pyprog = spawn('node', ['./a.js']);
-    //         pyprog.stdout.on('data', (data) => {
-    //             success(data);
-    //         });
-    //         pyprog.stderr.on('data', (data) => {
-    //             nosuccess(data);
-    //         });
-    //     });
-    // }
 }
 
 const instance = new AI();

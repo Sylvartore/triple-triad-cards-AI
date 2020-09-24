@@ -149,22 +149,35 @@ class GlobalStates extends Container {
         } else {
             return
         }
+        if (this.state.tiles.every(tile => tile.card !== null)) {
+            console.log("Game Over")
+            return
+        }
         packedState = this.packState()
         let start = Date.now()
         // for (let i = 0; i < 10; i++)
+        console.log("Calculating...")
         let best = AI.getBestMove(packedState, this.state.cardId, this.state.cardAttributes)
         let end = Date.now()
         console.log("Best Move calculated in ", (end - start) / 1000, "s")
         console.log("Best Move Score: ", best.score)
+        console.log(best)
         AI.stateTransition(best.move[0], best.move[1], packedState, this.state.cardId, this.state.cardAttributes)
+
         this.setState(this.unpackState(packedState))
     }
 
     packState = () => {
+        let tilesCard = this.state.tiles.map(tile => tile.card ? tile.card.index : -1)
+        let cardsTile = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+        for (let i = 0; i < 9; i++) {
+            if (tilesCard !== -1) cardsTile[tilesCard[i]] = i
+        }
         return {
             current: this.state.current,
-            tilesCard: this.state.tiles.map(tile => tile.card ? tile.card.index : -1),
-            cardsOwner: this.state.cards.map(card => card.owner)
+            cardsOwner: this.state.cards.map(card => card.owner),
+            cardsTile: cardsTile,
+            tilesCard: tilesCard
         }
     }
 
