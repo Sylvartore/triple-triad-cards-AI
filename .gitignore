@@ -1,13 +1,11 @@
-/node_modules
-/src/vis/__pycache__
-/src/vis/test
-/src/vis/model/__pycache__
+frontend/node_modules
+frontend/src/vis/__pycache__
+frontend/src/vis/test
+frontend/src/vis/model/__pycache__
 /debug/*
 
 # testing
-/coverage
+frontend/coverage
 
 # production
-/build
-
-/app
+frontend/build
