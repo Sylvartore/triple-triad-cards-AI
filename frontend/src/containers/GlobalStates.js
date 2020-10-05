@@ -1,95 +1,49 @@
 import { Container } from 'unstated';
-import AI from './AI';
-class Card {
-    constructor(id, name, left, up, right, down, onBoard, owner, index) {
-        this.name = name;
-        this.onBoard = onBoard;
-        this.owner = owner;
-        this.index = index;
-        this.id = id;
-        this.attributes = [left, right, up, down]
-    }
-}
-
-class Tile {
-    constructor(id) {
-        this.id = id
-        this.card = null
-    }
-}
+import GameMechanics from '../game/GameMechanics';
+import Card from '../game/Card'
+import Tile from '../game/Tile'
+const electron = window.require('electron');
+const net = electron.remote.require('net');
 
 
-let packedState;
 
 const initial_state = {
-    cards: [
-        new Card(0, "露琪亚", 8, 8, 2, 3, false, 0, 0),
-        new Card(1, "伊塞勒", 1, 4, 8, 8, false, 0, 1),
-        new Card(2, "铁面公卿", 1, 8, 8, 4, false, 0, 2),
-        new Card(3, "希瓦", 8, 1, 8, 8, false, 0, 3),
-        new Card(4, "希尔达", 8, 1, 4, 8, false, 0, 4),
-        new Card(5, "缪塔米克斯", 6, 2, 6, 6, false, 1, 5),
-        new Card(6, "蔓德拉", 3, 4, 2, 5, false, 1, 6),
-        new Card(7, "长须豹", 5, 2, 5, 2, false, 1, 7),
-        new Card(8, "矿爬虫", 4, 3, 3, 3, false, 1, 8),
-        new Card(9, "梦魔", 6, 7, 3, 2, false, 1, 9)
-    ],
+    cards: [],
     selected: -1,
     current: -1,
     tiles: [
-        new Tile(0),
-        new Tile(1),
-        new Tile(2),
-        new Tile(3),
-        new Tile(4),
-        new Tile(5),
-        new Tile(6),
-        new Tile(7),
-        new Tile(8),
-    ],
-    cardAttributes:
-        [[8, 8, 2, 3],
-        [1, 4, 8, 8],
-        [1, 8, 8, 4],
-        [8, 1, 8, 8],
-        [8, 1, 4, 8],
-        [6, 2, 6, 6],
-        [3, 4, 2, 5],
-        [5, 2, 5, 2],
-        [4, 3, 3, 3],
-        [6, 7, 3, 2]],
-    cardId: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
+        new Tile(0), new Tile(1), new Tile(2),
+        new Tile(3), new Tile(4), new Tile(5),
+        new Tile(6), new Tile(7), new Tile(8),
+    ]
 }
 
 class GlobalStates extends Container {
-
     state = { ...initial_state };
-
     constructor() {
         super();
         this.init();
     }
-    start;
-    loading = false;
     init = () => {
-        const ws = new WebSocket("ws://127.0.0.1:8765/");
-        ws.onmessage = (event) => {
-            console.log("Board loaded in ", (Date.now() - this.start) / 1000, "s")
-            let str = unescape(event.data.replace(/\\u/g, '%u'))
-            this.loading = false
-            let players = JSON.parse(str)
+        const webSocket = new WebSocket("ws://localhost:8001/");
+        webSocket.onopen = (e) => console.log("WebSocket Connected");
+        webSocket.onclose = (e) => console.log("WebSocket Disconnected");
+        webSocket.onmessage = (event) => {
+            let loadTime = (Date.now() - this.startTime) / 1000
+            this.startTime = 0
+            let players = JSON.parse(unescape(event.data.replace(/\\u/g, '%u')))
             if (!players || players.length === 0) {
-                console.log("Recognition failed ", (Date.now() - this.start) / 1000, "s")
+                console.log("Recognition failed")
             }
+            console.log(`Board loaded in ${loadTime}s`)
             let cards = []
-            let cardId = []
-            let cardAttributes = []
+            this.cardId = []
+            this.cardAttributes = []
             let index = 0
             for (let playerNo = 0; playerNo < 2; playerNo++) {
                 for (let cardInfo of players[playerNo]) {
-                    cardId[index] = cardInfo[4]
-                    cardAttributes[cardInfo[4]] = [cardInfo[0], cardInfo[1], cardInfo[2], cardInfo[3]]
+                    this.cardId[index] = cardInfo[4]
+                    this.cardAttributes[cardInfo[4]] = [cardInfo[0], cardInfo[1], cardInfo[2], cardInfo[3]]
                     cards.push(new Card(cardInfo[4], cardInfo[5], cardInfo[0], cardInfo[1],
                         cardInfo[2], cardInfo[3], false, playerNo, index++))
                 }
@@ -97,27 +51,35 @@ class GlobalStates extends Container {
             this.setState({
                 ...initial_state,
                 cards: cards,
-                cardId: cardId,
-                cardAttributes: cardAttributes,
             })
-            this.init()
         };
-        this.state.ws = ws
-    }
+        this.webSocket = webSocket
 
-    load = () => {
-        if (this.loading) {
-            alert("still loading")
-        } else {
-            if (this.state.ws && this.state.ws.readyState === WebSocket.OPEN) {
-                console.log("Loading Board...")
-                this.start = Date.now()
-                this.state.ws.send("getCard")
-                this.loading = true
-            } else {
-                console.log("Connecting to vis...")
+        const socket = new net.Socket();
+        socket.connect(8002, 'localhost', () => console.log("Socket connected"));
+        socket.on('close', () => console.log("Socket disconnected"));
+        socket.on('data', (data) => {
+            let calculateTime = (Date.now() - this.startTime) / 1000
+            this.startTime = 0
+            let response = JSON.parse(data.toString())
+            if (response.action === "error") {
+                console.log(response.data)
+                return
             }
+            console.log(`calculated in ${calculateTime}s, best score found ${response.data.score}`)
+            let packedState = this.packState(this.state)
+            GameMechanics.stateTransition(response.data.cardIndex, response.data.tileIndex, packedState, this.cardId, this.cardAttributes)
+            this.setState(this.unpackState(packedState))
+        })
+        this.socket = socket
+
+        window.onbeforeunload = () => {
+            webSocket.send('disconnect')
+            webSocket.close()
+            socket.write('disconnect;\n')
+            socket.distory()
         }
+        this.startTime = 0
     }
 
     select = e => {
@@ -137,13 +99,28 @@ class GlobalStates extends Container {
         let cardIndex = this.state.selected;
         if (this.state.current === -1) this.state.current = this.state.cards[cardIndex].owner
         let packedState = this.packState()
-        AI.stateTransition(cardIndex, tileIndex, packedState, this.state.cardId, this.state.cardAttributes)
+        GameMechanics.stateTransition(cardIndex, tileIndex, packedState, this.cardId, this.cardAttributes)
         this.setState(this.unpackState(packedState))
     }
 
-
+    load = () => {
+        if (this.startTime !== 0) {
+            alert("Still Processing...")
+            return
+        }
+        if (!this.webSocket || this.webSocket.readyState !== WebSocket.OPEN) {
+            console.log("Disconnected to VIS")
+        }
+        console.log("Loading Board...")
+        this.startTime = Date.now()
+        this.webSocket.send("getCard")
+    }
 
     getBestMove = (playerNo = this.state.current) => {
+        if (!this.state.cards || this.state.cards.length === 0 || !this.cardId || !this.cardAttributes) {
+            console.log("load board first")
+            return
+        }
         if (playerNo !== -1) {
             this.state.current = playerNo
         } else {
@@ -153,18 +130,24 @@ class GlobalStates extends Container {
             console.log("Game Over")
             return
         }
-        packedState = this.packState()
-        let start = Date.now()
-        // for (let i = 0; i < 10; i++)
+        if (this.startTime !== 0) {
+            alert("Still Processing...")
+            return
+        }
+        if (!this.socket || this.socket.readyState !== "open") {
+            console.log("Disconnected to AI")
+            return
+        }
+        this.startTime = Date.now()
         console.log("Calculating...")
-        let best = AI.getBestMove(packedState, this.state.cardId, this.state.cardAttributes)
-        let end = Date.now()
-        console.log("Best Move calculated in ", (end - start) / 1000, "s")
-        console.log("Best Move Score: ", best.score)
-        console.log(best)
-        AI.stateTransition(best.move[0], best.move[1], packedState, this.state.cardId, this.state.cardAttributes)
-
-        this.setState(this.unpackState(packedState))
+        let packedState = this.packState()
+        this.socket.write(`getBestMove;` +
+            `current=${this.state.current}&` +
+            `cardsOwner=${JSON.stringify(packedState.cardsOwner).replace(/[[\]]/g, "")}&` +
+            `cardsTile=${JSON.stringify(packedState.cardsTile).replace(/[[\]]/g, "")}&` +
+            `tilesCard=${JSON.stringify(packedState.tilesCard).replace(/[[\]]/g, "")}&` +
+            `cardId=${JSON.stringify(this.cardId).replace(/[[\]]/g, "")}&` +
+            `cardAttributes=${JSON.stringify(this.cardAttributes).replace(/[[\]]/g, "")}\n`)
     }
 
     packState = () => {

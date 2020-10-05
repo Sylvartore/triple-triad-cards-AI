@@ -9,3 +9,6 @@ frontend/coverage
 
 # production
 frontend/build
+
+backend/.idea
+backend/backend.iml

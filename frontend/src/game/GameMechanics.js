@@ -5,7 +5,7 @@ const Get =
     [3, 4, 5, 6, 7, 8, -1, -1, -1]]
 const Counter = [2, 3, 0, 1]
 
-class AI {
+class GameMechanics {
 
     stateTransition(cardIndex, tileIndex, state, cardId, cardAttributes) {
         if (state.tilesCard[tileIndex] !== -1) return state
@@ -166,7 +166,7 @@ class AI {
     }
 }
 
-const instance = new AI();
+const instance = new GameMechanics();
 Object.freeze(instance);
 
 export default instance;

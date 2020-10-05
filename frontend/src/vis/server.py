@@ -8,11 +8,11 @@ from identify import indentifyCard
 
 async def run(websocket, path):
     msg = await websocket.recv()
-    if(msg == "getCard"):
-        print("Request received: " + msg)
-        data = getCards()
-        await websocket.send(data)
-        print("Data delivered")
+    while(msg != "disconnect"):
+        if(msg == "getCard"):
+            data = getCards()
+            await websocket.send(data)
+        msg = await websocket.recv()
 
 
 def getCards():
@@ -29,8 +29,7 @@ def getCards():
 
 
 if __name__ == "__main__":
-    start_server = websockets.serve(run, "localhost", 8765)
+    start_server = websockets.serve(run, "localhost", 8001)
     loop = asyncio.get_event_loop()
-    print("running on 8765")
     loop.run_until_complete(start_server)
     loop.run_forever()

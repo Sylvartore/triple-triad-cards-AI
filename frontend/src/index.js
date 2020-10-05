@@ -9,7 +9,7 @@ const GlobalStatesContainer = new GlobalStates();
 
 ReactDOM.render(
   <Provider inject={[GlobalStatesContainer]}>
-    <App />,
-   </Provider>,
+    <App />
+  </Provider>,
   document.getElementById('root')
 );
