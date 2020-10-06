@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'unstated';
-import App from './components/App';
-import GlobalStates from './containers/GlobalStates';
-import './css/style.css';
+import App from './ui/components/App';
+import GlobalStates from './ui/containers/GlobalStates';
+import './ui/css/style.css';
 
 const GlobalStatesContainer = new GlobalStates();
 

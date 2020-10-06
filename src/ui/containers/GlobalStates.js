@@ -42,10 +42,10 @@ class GlobalStates extends Container {
             let index = 0
             for (let playerNo = 0; playerNo < 2; playerNo++) {
                 for (let cardInfo of players[playerNo]) {
-                    this.cardId[index] = cardInfo[4]
-                    this.cardAttributes[cardInfo[4]] = [cardInfo[0], cardInfo[1], cardInfo[2], cardInfo[3]]
-                    cards.push(new Card(cardInfo[4], cardInfo[5], cardInfo[0], cardInfo[1],
-                        cardInfo[2], cardInfo[3], false, playerNo, index++))
+                    this.cardId[index] = cardInfo[0]
+                    this.cardAttributes[cardInfo[4]] = [cardInfo[1], cardInfo[2], cardInfo[3], cardInfo[4]]
+                    cards.push(new Card(cardInfo[0], cardInfo[5], cardInfo[1], cardInfo[2],
+                        cardInfo[3], cardInfo[4], false, playerNo, index++))
                 }
             }
             this.setState({

@@ -79,8 +79,8 @@ def extractCard():
             ax.add_patch(rect)
         plt.show()
         if len(cardCoodinates) != 10:
-            pil_image.save("../debug/failed_img_" +
-                           str(len(os.listdir("../debug/"))) + ".png", "PNG")
+            pil_image.save("./debug/failed_img_" +
+                           str(len(os.listdir("./debug/"))) + ".png", "PNG")
             return []
     return cardImages
 
