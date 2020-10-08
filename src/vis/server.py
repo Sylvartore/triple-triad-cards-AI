@@ -4,18 +4,28 @@ import websockets
 import json
 from extract import extractCard
 from identify import indentifyCard
+from model.modelUpdater import getCardInfo
+from model.modelUpdater import getCardImg
 
 
 async def run(websocket, path):
     msg = await websocket.recv()
-    while(msg != "disconnect"):
-        if(msg == "getCard"):
-            data = getCards()
-            await websocket.send(data)
+    msg = msg.split(";")
+    action = msg[0]
+    while(action != "disconnect"):
+        if(action == "loadBoard"):
+            response = loadBoard()
+            await websocket.send(action + ";" + response)
+        if(action == "getCardInfo"):
+            data = getCardInfo()
+            response = {"action": action, "data": data}
+            await websocket.send(json.dumps(response, separators=(',', ':')))
         msg = await websocket.recv()
+        msg = msg.split(";")
+        action = msg[0]
 
 
-def getCards():
+def loadBoard():
     data = pd.read_csv("./src/vis/test/cards.txt")
     cardsInfo = data.values
     cardImages = extractCard()

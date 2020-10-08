@@ -3,12 +3,20 @@ import LoadBoard from './LoadBoard';
 import Panel from './Panel';
 import { Subscribe } from 'unstated';
 import GlobalStates from '../containers/GlobalStates';
+// import ModelUpdater from '../utilities/ModelUpdater'
 
 class App extends Component {
   render() {
     return (
       <div>
         <LoadBoard />
+        <Subscribe to={[GlobalStates]}>
+          {globalStates =>
+            <button onClick={() => globalStates.vis(1)}>
+              Update Model
+            </button>
+          }
+        </Subscribe>
         <Subscribe to={[GlobalStates]}>
           {globalStates =>
             <button onClick={() => globalStates.getBestMove()}>
@@ -34,6 +42,7 @@ class App extends Component {
       </div>
     );
   }
+
 }
 
 export default App;

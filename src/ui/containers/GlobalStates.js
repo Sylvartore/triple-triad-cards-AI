@@ -29,29 +29,20 @@ class GlobalStates extends Container {
         webSocket.onopen = (e) => console.log("WebSocket Connected");
         webSocket.onclose = (e) => console.log("WebSocket Disconnected");
         webSocket.onmessage = (event) => {
-            let loadTime = (Date.now() - this.startTime) / 1000
-            this.startTime = 0
-            let players = JSON.parse(unescape(event.data.replace(/\\u/g, '%u')))
-            if (!players || players.length === 0) {
-                console.log("Recognition failed")
+            let time = (Date.now() - this.startTime) / 1000
+            // let data = unescape(event.data.replace(/\\u/g, '%u'))
+            let json = event.data.replace('\n', '')
+            let msg = JSON.parse(json)
+            switch (msg.action) {
+                case "loadBoard":
+                    this.startTime = 0
+                    this.loadBoard(msg.data, time)
+                    break;
+                case "getCardInfo":
+                    this.f(msg.data)
+                    break;
             }
-            console.log(`Board loaded in ${loadTime}s`)
-            let cards = []
-            this.cardId = []
-            this.cardAttributes = []
-            let index = 0
-            for (let playerNo = 0; playerNo < 2; playerNo++) {
-                for (let cardInfo of players[playerNo]) {
-                    this.cardId[index] = cardInfo[0]
-                    this.cardAttributes[cardInfo[4]] = [cardInfo[1], cardInfo[2], cardInfo[3], cardInfo[4]]
-                    cards.push(new Card(cardInfo[0], cardInfo[5], cardInfo[1], cardInfo[2],
-                        cardInfo[3], cardInfo[4], false, playerNo, index++))
-                }
-            }
-            this.setState({
-                ...initial_state,
-                cards: cards,
-            })
+
         };
         this.webSocket = webSocket
 
@@ -82,6 +73,39 @@ class GlobalStates extends Container {
         this.startTime = 0
     }
 
+    loadBoard = (data, time) => {
+        let players = JSON.parse(unescape(data.replace(/\\u/g, '%u')))
+        if (!players || players.length === 0) {
+            console.log("Recognition failed")
+        }
+        console.log(`Board loaded in ${time}s`)
+        let cards = []
+        this.cardId = []
+        this.cardAttributes = []
+        let index = 0
+        for (let playerNo = 0; playerNo < 2; playerNo++) {
+            for (let cardInfo of players[playerNo]) {
+                this.cardId[index] = cardInfo[0]
+                this.cardAttributes[cardInfo[4]] = [cardInfo[1], cardInfo[2], cardInfo[3], cardInfo[4]]
+                cards.push(new Card(cardInfo[0], cardInfo[5], cardInfo[1], cardInfo[2],
+                    cardInfo[3], cardInfo[4], false, playerNo, index++))
+            }
+        }
+        this.setState({
+            ...initial_state,
+            cards: cards,
+        })
+    }
+
+    f = (data) => {
+        let dom = new DOMParser().parseFromString(data, "application/xml")
+        console.log(data)
+        console.log(dom)
+        let cardTable = dom.getElementById("shortCardsListTable")
+        // console.log(data)
+        let cardList = cardTable.querySelector("tr")
+        console.log(cardList.length)
+    }
     select = e => {
         let card_index = Number(e.target.id)
         if (this.state.selected !== card_index &&
@@ -103,7 +127,7 @@ class GlobalStates extends Container {
         this.setState(this.unpackState(packedState))
     }
 
-    load = () => {
+    vis = operation => {
         if (this.startTime !== 0) {
             alert("Still Processing...")
             return
@@ -111,9 +135,17 @@ class GlobalStates extends Container {
         if (!this.webSocket || this.webSocket.readyState !== WebSocket.OPEN) {
             console.log("Disconnected to VIS")
         }
-        console.log("Loading Board...")
         this.startTime = Date.now()
-        this.webSocket.send("getCard")
+        switch (operation) {
+            case 0:
+                console.log("Loading Board...")
+                this.webSocket.send("loadBoard;")
+                break
+            case 1:
+                console.log("Updating Model...")
+                this.webSocket.send("getCardInfo;")
+                break
+        }
     }
 
     getBestMove = (playerNo = this.state.current) => {

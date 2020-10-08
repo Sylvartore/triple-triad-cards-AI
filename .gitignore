@@ -1,15 +1,19 @@
 node_modules
 debug/*
 
+public/cards/imgs/*
+
 src/vis/__pycache__
 src/vis/test
 src/vis/model/__pycache__
+src/vis/model/pic
 
 # testing
-frontend/coverage
+src/frontend/coverage
 
 # production
-frontend/build
+src/frontend/build
+src/ai/out
 
-backend/.idea
-backend/backend.iml
+src/ai/.idea
+src/ai/backend.iml

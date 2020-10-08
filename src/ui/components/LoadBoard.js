@@ -8,7 +8,7 @@ class LoadBoard extends React.Component {
             <div>
                 <Subscribe to={[GlobalStates]}>
                     {globalStates => (
-                        <button onClick={() => globalStates.load()}>
+                        <button onClick={() => globalStates.vis(0)}>
                             Load Board
                         </button>
                     )}
