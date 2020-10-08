@@ -3,7 +3,6 @@ import LoadBoard from './LoadBoard';
 import Panel from './Panel';
 import { Subscribe } from 'unstated';
 import GlobalStates from '../containers/GlobalStates';
-// import ModelUpdater from '../utilities/ModelUpdater'
 
 class App extends Component {
   render() {
