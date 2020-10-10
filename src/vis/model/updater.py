@@ -7,6 +7,9 @@ import re
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import nest_asyncio
+nest_asyncio.apply()
+
 
 baseUrl = "https://arrtripletriad.com"
 imgPath = "./public/cards/imgs/"
@@ -19,6 +22,11 @@ classToKey = {
     "cardRarity": "rarity",
     "cardType": "type"
 }
+
+
+async def write_csv(results):
+    df = pd.DataFrame(results, columns=columns)
+    df.to_csv("./public/cards/cardInfo.csv", index=False)
 
 
 def getCardInfo():
@@ -37,15 +45,11 @@ def getCardInfo():
         data["url"] = a["href"]
         cardInfo.append(data)
         id += 1
-
     loop = asyncio.get_event_loop()
     asyncJobs = [downloadCard(data) for data in cardInfo]
     results = loop.run_until_complete(asyncio.gather(*asyncJobs))
-    print("writing csv")
-    df = pd.DataFrame(results, columns=columns)
-    df.to_csv("./public/cards/cardInfo.csv", index=False)
-    print("writing completed")
-    return cardInfo
+    asyncio.run(write_csv(results))
+    return results
 
 
 async def downloadCard(data):
@@ -67,21 +71,21 @@ async def downloadCard(data):
                             data[key] = value
                         else:
                             data["url"] = img["src"]
-                    print('[Completed] get Card No' +
-                          str(data["id"]) + " info")
+                            # print('[Completed] get Card No' +
+                            #       str(data["id"]) + " info")
                     return data
-                else:
-                    print('[Failed to] get card No' +
-                          str(data["id"]) + " info")
-                    print('Not found')
+                # else:
+                    # print('[Failed to] get card No' +
+                    #       str(data["id"]) + " info")
+                    # print('Not found')
     except Exception as e:
-        print('[Failed to] get card No' + str(data["id"]) + " info")
-        print(e)
-        print("trying again")
-        await downloadCard(data)
+        # print('[Failed to] get card No' + str(data["id"]) + " info")
+        # print(e)
+        # print("trying again")
+        return await downloadCard(data)
 
 
-def getCardImg(data):
+def getCardImg(cardInfo):
     loop = asyncio.get_event_loop()
     asyncJobs = [downloadImg(data) for data in cardInfo]
     loop.run_until_complete(asyncio.gather(*asyncJobs))
@@ -97,13 +101,13 @@ async def downloadImg(data):
                     f = await aiofiles.open(imgPath + str(data["id"]) + ".png", mode='wb')
                     await f.write(await response.read())
                     await f.close()
-                    print('[Completed] download picture No' + str(data["id"]))
-                else:
-                    print('[Failed to] download picture No' + str(data["id"]))
-                    print('Not found')
+                #     print('[Completed] download picture No' + str(data["id"]))
+                # else:
+                #     print('[Failed to] download picture No' + str(data["id"]))
+                #     print('Not found')
     except Exception as e:
-        print('[Failed to] download picture No' + str(data["id"]))
-        print(e)
+        # print('[Failed to] download picture No' + str(data["id"]))
+        # print(e)
         await downloadImg(data)
 
 

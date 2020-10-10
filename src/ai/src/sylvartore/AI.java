@@ -11,16 +11,16 @@ public class AI {
         visited = new int[9];
     }
 
-    public int[] getBestMove(GameState state, int[] cardId, int[][] cardAttributes) {
+    public int[] getBestMove(GameState state,  int[][] cardAttributes) {
         int max = -5;
         int bestMoveCardIndex = -1;
         int bestMoveTileIndex = -1;
         Arrays.fill(visited, 0);
         int side = state.current;
         for (Integer[] move : getAllMoves(state)) {
-            ArrayList<int[]> operations = getOperations(move[0], move[1], state, cardId, cardAttributes);
+            ArrayList<int[]> operations = getOperations(move[0], move[1], state,  cardAttributes);
             stateTransition(operations, state);
-            int utility = min(state, -5, 5, cardId, side, cardAttributes);
+            int utility = min(state, -5, 5,  side, cardAttributes);
             stateRollback(operations, state);
             if (max == -5 || utility > max) {
                 max = utility;
@@ -31,19 +31,20 @@ public class AI {
         return new int[] {max, bestMoveCardIndex, bestMoveTileIndex};
     }
 
-    private ArrayList<int[]> getOperations(int cardIndex, int tileIndex, GameState state, int[] cardId, int[][] cardAttributes) {
+    private ArrayList<int[]> getOperations(int cardIndex, int tileIndex, GameState state,  int[][] cardAttributes) {
         ArrayList<int[]> operations = new ArrayList<>();
         operations.add(new int[]{0, cardIndex, tileIndex});
-        takeoverSettlement(cardIndex, tileIndex, state, cardId, cardAttributes, operations);
+        takeoverSettlement(cardIndex, tileIndex, state,  cardAttributes, operations);
         return operations;
     }
 
-    private void takeoverSettlement(int cardIndex, int tileIndex, GameState state, int[] cardId, int[][] cardAttributes, ArrayList<int[]> operations) {
-        rulePlus(cardIndex, tileIndex, state, cardId, cardAttributes, operations);
-        ruleBasic(cardIndex, tileIndex, state, cardId, cardAttributes, operations);
+    private void takeoverSettlement(int cardIndex, int tileIndex, GameState state,  int[][] cardAttributes, ArrayList<int[]> operations) {
+//        rulePlus(cardIndex, tileIndex, state,  cardAttributes, operations);
+        ruleSame(cardIndex, tileIndex, state, cardAttributes, operations);
+        ruleBasic(cardIndex, tileIndex, state, cardAttributes, operations);
     }
 
-    private void rulePlus(int cardIndex, int tileIndex, GameState state, int[] cardId, int[][] cardAttributes, ArrayList<int[]> operations) {
+    private void rulePlus(int cardIndex, int tileIndex, GameState state, int[][] cardAttributes, ArrayList<int[]> operations) {
         HashMap<Integer, Integer[]> map = new HashMap<>();
         Arrays.fill(visited, 0);
         visited[tileIndex] = 1;
@@ -52,17 +53,17 @@ public class AI {
             if (targetTileIndex == -1) continue;
             int targetCardIndex = state.tilesCard[targetTileIndex];
             if (targetCardIndex == -1) continue;
-            int key = cardAttributes[cardId[cardIndex]][direction] +
-                    cardAttributes[cardId[targetCardIndex]][Counter[direction]];
+            int key = cardAttributes[cardIndex][direction] +
+                    cardAttributes[targetCardIndex][Counter[direction]];
             if (map.containsKey(key)) {
                 if (state.cardsOwner[targetCardIndex] != state.current) {
                     operations.add(new int[]{1, targetCardIndex, state.current});
-                    combo(targetCardIndex, targetTileIndex, state, cardId, cardAttributes, operations);
+                    combo(targetCardIndex, targetTileIndex, state,  cardAttributes, operations);
                 }
                 Integer[] stored = map.get(key);
                 if (state.cardsOwner[stored[0]] != state.current) {
                     operations.add(new int[]{1, stored[0], state.current});
-                    combo(stored[0], stored[1], state, cardId, cardAttributes, operations);
+                    combo(stored[0], stored[1], state, cardAttributes, operations);
                 }
             } else {
                 map.put(key, new Integer[]{targetCardIndex, targetTileIndex});
@@ -70,30 +71,54 @@ public class AI {
         }
     }
 
-    private void combo(int cardIndex, int tileIndex, GameState state, int[] cardId, int[][] cardAttributes, ArrayList<int[]> operations) {
+    private void ruleSame(int cardIndex, int tileIndex, GameState state,  int[][] cardAttributes, ArrayList<int[]> operations) {
+        ArrayList<int[]> list = new ArrayList<>();
+        Arrays.fill(visited, 0);
+        visited[tileIndex] = 1;
+        for (int direction = 0; direction < 4; direction++) {
+            int targetTileIndex = Get[direction][tileIndex];
+            if (targetTileIndex == -1) continue;
+            int targetCardIndex = state.tilesCard[targetTileIndex];
+            if (targetCardIndex == -1) continue;
+            if (cardAttributes[cardIndex][direction]
+                    == cardAttributes[targetCardIndex][Counter[direction]]) {
+                list.add(new int[] {targetCardIndex, targetTileIndex, });
+            }
+        }
+        if(list.size() > 1) {
+            for(int[] indies : list ) {
+                if (state.cardsOwner[ indies[0]] != state.current) {
+                    operations.add(new int[]{1, indies[0], state.current});
+                    combo(indies[0], indies[1], state,  cardAttributes, operations);
+                }
+            }
+        }
+    }
+
+    private void combo(int cardIndex, int tileIndex, GameState state,  int[][] cardAttributes, ArrayList<int[]> operations) {
         if (visited[tileIndex] == 1) return;
         for (int direction = 0; direction < 4; direction++) {
             int targetTileIndex = Get[direction][tileIndex];
             if (targetTileIndex == -1) continue;
             int targetCardIndex = state.tilesCard[targetTileIndex];
             if (targetCardIndex == -1 || state.cardsOwner[targetCardIndex] == state.current) continue;
-            if (cardAttributes[cardId[cardIndex]][direction] >
-                    cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
+            if (cardAttributes[cardIndex][direction] >
+                    cardAttributes[targetCardIndex][Counter[direction]]) {
                 visited[tileIndex] = 1;
                 operations.add(new int[]{1, targetCardIndex, state.current});
-                combo(targetCardIndex, targetTileIndex, state, cardId, cardAttributes, operations);
+                combo(targetCardIndex, targetTileIndex, state,  cardAttributes, operations);
             }
         }
     }
 
-    private void ruleBasic(int cardIndex, int tileIndex, GameState state, int[] cardId, int[][] cardAttributes, ArrayList<int[]> operations) {
+    private void ruleBasic(int cardIndex, int tileIndex, GameState state, int[][] cardAttributes, ArrayList<int[]> operations) {
         for (int direction = 0; direction < 4; direction++) {
             int targetTileIndex = Get[direction][tileIndex];
             if (targetTileIndex == -1) continue;
             int targetCardIndex = state.tilesCard[targetTileIndex];
             if (targetCardIndex == -1 || state.cardsOwner[targetCardIndex] == state.current) continue;
-            if (cardAttributes[cardId[cardIndex]][direction] >
-                    cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
+            if (cardAttributes[cardIndex][direction] >
+                    cardAttributes[targetCardIndex][Counter[direction]]) {
                 operations.add(new int[]{1, targetCardIndex, state.current});
             }
         }
@@ -124,13 +149,13 @@ public class AI {
     }
 
 
-    private int min(GameState state, int alpha, int beta, int[] cardId, int side, int[][] cardAttributes) {
+    private int min(GameState state, int alpha, int beta, int side, int[][] cardAttributes) {
         if (terminateTest(state)) return evaluateScore(state, side);
         int value = 5;
         for (Integer[] move : getAllMoves(state)) {
-            ArrayList<int[]> operations = getOperations(move[0], move[1], state, cardId, cardAttributes);
+            ArrayList<int[]> operations = getOperations(move[0], move[1], state,  cardAttributes);
             stateTransition(operations, state);
-            int utility = max(state, alpha, beta, cardId, side, cardAttributes);
+            int utility = max(state, alpha, beta, side, cardAttributes);
             stateRollback(operations, state);
             if (utility < value) value = utility;
             if (utility <= alpha) return utility;
@@ -139,13 +164,13 @@ public class AI {
         return value;
     }
 
-    private int max(GameState state, int alpha, int beta, int[] cardId, int side, int[][] cardAttributes) {
+    private int max(GameState state, int alpha, int beta,  int side, int[][] cardAttributes) {
         if (terminateTest(state)) return evaluateScore(state, side);
         int value = -5;
         for (Integer[] move : getAllMoves(state)) {
-            ArrayList<int[]> operations = getOperations(move[0], move[1], state, cardId, cardAttributes);
+            ArrayList<int[]> operations = getOperations(move[0], move[1], state,  cardAttributes);
             stateTransition(operations, state);
-            int utility = min(state, alpha, beta, cardId, side, cardAttributes);
+            int utility = min(state, alpha, beta, side, cardAttributes);
             stateRollback(operations, state);
             if (utility > value) value = utility;
             if (utility >= beta) return utility;

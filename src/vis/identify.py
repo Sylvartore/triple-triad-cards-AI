@@ -3,6 +3,7 @@ import h5py
 import cv2
 from matplotlib import pyplot as plt
 from PIL import Image
+from PIL import ImageDraw
 import numpy as np
 from extract import extractCard
 
@@ -19,16 +20,29 @@ def indentifyCard(cardImages):
             queryVec = model.extract_feat_2(image)
             scores = np.dot(queryVec, feats.T)
             scoreRank = np.argsort(scores)[::-1]
-            name = str(imgNames[scoreRank[0]]).split('\'')[1]
-            id = int(name[:-4])
+            first = str(imgNames[scoreRank[0]]).split('\'')[1]
+            second = str(imgNames[scoreRank[1]]).split('\'')[1]
+            third = str(imgNames[scoreRank[2]]).split('\'')[1]
+            id = int(first[:-4]) - 1
             cards[playerNo].append(id)
 
             if __name__ == "__main__":
-                fig, (ax1, ax2) = plt.subplots(1, 2)
-                ax1.imshow(image)
-                ax1.axis('off')
-                ax2.imshow(Image.open("./public/cards/imgs/" + name))
-                ax2.axis('off')
+                fig, ax = plt.subplots(2, 2)
+                ax[0][0].imshow(image)
+                ax[0][0].axis('off')
+                ax[0][0].set_title('Origin')
+
+                ax[0][1].imshow(Image.open("./public/cards/imgs/" + first))
+                ax[0][1].axis('off')
+                ax[0][1].set_title("score: " + str(scores[scoreRank[0]]))
+
+                ax[1][0].imshow(Image.open("./public/cards/imgs/" + second))
+                ax[1][0].axis('off')
+                ax[1][0].set_title("score: " + str(scores[scoreRank[1]]))
+
+                ax[1][1].imshow(Image.open("./public/cards/imgs/" + third))
+                ax[1][1].axis('off')
+                ax[1][1].set_title("score: " + str(scores[scoreRank[2]]))
                 plt.show()
     return cards
 

@@ -67,7 +67,7 @@ public class ServerThread extends Thread {
 
     private String getBestMove(String rawData)  {
         int current = -1;
-        int[] cardsOwner = null, cardsTile = null, tilesCard = null, cardId = null;
+        int[] cardsOwner = null, cardsTile = null, tilesCard = null;
         int[][] cardAttributes = null;
         String[] pairs = rawData.split("&");
         for (String pair : pairs) {
@@ -87,10 +87,6 @@ public class ServerThread extends Thread {
                     cardsTile = parseIntArray(value);
                     if(cardsTile.length!=10)   return errorMsgBuilder("Invalid cardsTile value");
                     break;
-                case "cardId":
-                    cardId = parseIntArray(value);
-                    if(cardId.length!=10)   return errorMsgBuilder("Invalid cardId value");
-                    break;
                 case "tilesCard":
                     tilesCard = parseIntArray(value);
                     if(tilesCard.length!=9)   return errorMsgBuilder( "Invalid tilesCard value");
@@ -104,7 +100,7 @@ public class ServerThread extends Thread {
             }
         }
         GameState state = new GameState(current, cardsOwner, cardsTile, tilesCard);
-        int[] best = ai.getBestMove(state, cardId, cardAttributes);
+        int[] best = ai.getBestMove(state,  cardAttributes);
         return responseBuilder("bestMove", "{\"score\":" + best[0] + ",\"cardIndex\":" + best[1] + ",\"tileIndex\":" + best[2] + "}") ;
     }
 

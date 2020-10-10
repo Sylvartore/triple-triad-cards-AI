@@ -26,23 +26,26 @@ class GlobalStates extends Container {
     }
     init = () => {
         const webSocket = new WebSocket("ws://localhost:8001/");
-        webSocket.onopen = (e) => console.log("WebSocket Connected");
-        webSocket.onclose = (e) => console.log("WebSocket Disconnected");
+        webSocket.onopen = (e) => console.log("WebSocket connected");
+        webSocket.onclose = (e) => console.log("WebSocket disconnected");
+        webSocket.onerror = (e) => console.log(e);
         webSocket.onmessage = (event) => {
             let time = (Date.now() - this.startTime) / 1000
             // let data = unescape(event.data.replace(/\\u/g, '%u'))
-            let json = event.data.replace('\n', '')
+            let json = event.data
             let msg = JSON.parse(json)
             switch (msg.action) {
                 case "loadBoard":
-                    this.startTime = 0
                     this.loadBoard(msg.data, time)
+                case "completed":
+                    this.startTime = 0
+                    console.log("update completed")
                     break;
-                case "getCardInfo":
-                    this.f(msg.data)
+                case "msg":
+                    this.startTime = 0
+                    console.log(msg.data)
                     break;
             }
-
         };
         this.webSocket = webSocket
 
@@ -59,16 +62,17 @@ class GlobalStates extends Container {
             }
             console.log(`calculated in ${calculateTime}s, best score found ${response.data.score}`)
             let packedState = this.packState(this.state)
-            GameMechanics.stateTransition(response.data.cardIndex, response.data.tileIndex, packedState, this.cardId, this.cardAttributes)
+            GameMechanics.stateTransition(response.data.cardIndex, response.data.tileIndex, packedState, this.cardAttributes)
             this.setState(this.unpackState(packedState))
         })
         this.socket = socket
 
         window.onbeforeunload = () => {
+            console.log("unload")
             webSocket.send('disconnect')
             webSocket.close()
             socket.write('disconnect;\n')
-            socket.distory()
+            socket.destroy()
         }
         this.startTime = 0
     }
@@ -77,16 +81,16 @@ class GlobalStates extends Container {
         let players = JSON.parse(unescape(data.replace(/\\u/g, '%u')))
         if (!players || players.length === 0) {
             console.log("Recognition failed")
+            return
         }
         console.log(`Board loaded in ${time}s`)
+        console.log(players)
         let cards = []
-        this.cardId = []
         this.cardAttributes = []
         let index = 0
         for (let playerNo = 0; playerNo < 2; playerNo++) {
             for (let cardInfo of players[playerNo]) {
-                this.cardId[index] = cardInfo[0]
-                this.cardAttributes[cardInfo[4]] = [cardInfo[1], cardInfo[2], cardInfo[3], cardInfo[4]]
+                this.cardAttributes[index] = [cardInfo[1], cardInfo[2], cardInfo[3], cardInfo[4]]
                 cards.push(new Card(cardInfo[0], cardInfo[5], cardInfo[1], cardInfo[2],
                     cardInfo[3], cardInfo[4], false, playerNo, index++))
             }
@@ -95,17 +99,10 @@ class GlobalStates extends Container {
             ...initial_state,
             cards: cards,
         })
+        console.log(this.cardAttributes)
+        console.log(cards)
     }
 
-    f = (data) => {
-        let dom = new DOMParser().parseFromString(data, "application/xml")
-        console.log(data)
-        console.log(dom)
-        let cardTable = dom.getElementById("shortCardsListTable")
-        // console.log(data)
-        let cardList = cardTable.querySelector("tr")
-        console.log(cardList.length)
-    }
     select = e => {
         let card_index = Number(e.target.id)
         if (this.state.selected !== card_index &&
@@ -123,7 +120,7 @@ class GlobalStates extends Container {
         let cardIndex = this.state.selected;
         if (this.state.current === -1) this.state.current = this.state.cards[cardIndex].owner
         let packedState = this.packState()
-        GameMechanics.stateTransition(cardIndex, tileIndex, packedState, this.cardId, this.cardAttributes)
+        GameMechanics.stateTransition(cardIndex, tileIndex, packedState, this.cardAttributes)
         this.setState(this.unpackState(packedState))
     }
 
@@ -139,17 +136,17 @@ class GlobalStates extends Container {
         switch (operation) {
             case 0:
                 console.log("Loading Board...")
-                this.webSocket.send("loadBoard;")
+                this.webSocket.send("loadBoard")
                 break
             case 1:
                 console.log("Updating Model...")
-                this.webSocket.send("getCardInfo;")
+                this.webSocket.send("getCardInfo")
                 break
         }
     }
 
     getBestMove = (playerNo = this.state.current) => {
-        if (!this.state.cards || this.state.cards.length === 0 || !this.cardId || !this.cardAttributes) {
+        if (!this.state.cards || this.state.cards.length === 0 || !this.cardAttributes) {
             console.log("load board first")
             return
         }
@@ -178,7 +175,6 @@ class GlobalStates extends Container {
             `cardsOwner=${JSON.stringify(packedState.cardsOwner).replace(/[[\]]/g, "")}&` +
             `cardsTile=${JSON.stringify(packedState.cardsTile).replace(/[[\]]/g, "")}&` +
             `tilesCard=${JSON.stringify(packedState.tilesCard).replace(/[[\]]/g, "")}&` +
-            `cardId=${JSON.stringify(this.cardId).replace(/[[\]]/g, "")}&` +
             `cardAttributes=${JSON.stringify(this.cardAttributes).replace(/[[\]]/g, "")}\n`)
     }
 

@@ -7,35 +7,36 @@ const Counter = [2, 3, 0, 1]
 
 class GameMechanics {
 
-    stateTransition(cardIndex, tileIndex, state, cardId, cardAttributes) {
+    stateTransition(cardIndex, tileIndex, state, cardAttributes) {
         if (state.tilesCard[tileIndex] !== -1) return state
         state.tilesCard[tileIndex] = cardIndex;
         state.cardsTile[cardIndex] = tileIndex;
-        this.takeoverSettlement(cardIndex, tileIndex, state, cardId, cardAttributes)
+        this.takeoverSettlement(cardIndex, tileIndex, state, cardAttributes)
         state.current = state.current ? 0 : 1
     }
 
-    takeoverSettlement = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
-        // this.ruleSame(cardIndex, tileIndex, state, cardId, cardAttributes)
-        this.rulePlus(cardIndex, tileIndex, state, cardId, cardAttributes)
-        this.ruleBasic(cardIndex, tileIndex, state, cardId, cardAttributes)
+    takeoverSettlement = (cardIndex, tileIndex, state, cardAttributes) => {
+        this.ruleSame(cardIndex, tileIndex, state, cardAttributes)
+        // this.rulePlus(cardIndex, tileIndex, state, cardId, cardAttributes)
+        this.ruleBasic(cardIndex, tileIndex, state, cardAttributes)
     }
 
-    ruleSame = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
+    ruleSame = (cardIndex, tileIndex, state, cardAttributes) => {
         let res = []
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
             if (targetTileIndex === -1) continue
             let targetCardIndex = state.tilesCard[targetTileIndex]
             if (targetCardIndex === -1) continue
-            if (cardAttributes[cardId[cardIndex]][direction] ===
-                cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
-                res.push(targetCardIndex)
+            if (cardAttributes[cardIndex][direction] ===
+                cardAttributes[targetCardIndex][Counter[direction]]) {
+                res.push([targetCardIndex, targetTileIndex])
             }
         }
         if (res.length > 1) {
-            for (const targetCardIndex of res) {
-                state.cardsOwner[targetCardIndex] = state.current
+            for (const index of res) {
+                state.cardsOwner[index[0]] = state.current
+                this.combo(index[0], index[1], state, cardAttributes)
             }
         }
     }
@@ -65,28 +66,28 @@ class GameMechanics {
         }
     }
 
-    combo = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
+    combo = (cardIndex, tileIndex, state, cardAttributes) => {
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
             if (targetTileIndex === -1) continue
             let targetCardIndex = state.tilesCard[targetTileIndex]
             if (targetCardIndex === -1 || state.cardsOwner[targetCardIndex] === state.current) continue
-            if (cardAttributes[cardId[cardIndex]][direction] >
-                cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
+            if (cardAttributes[cardIndex][direction] >
+                cardAttributes[targetCardIndex][Counter[direction]]) {
                 state.cardsOwner[targetCardIndex] = state.current
-                this.combo(targetCardIndex, targetTileIndex, state, cardId, cardAttributes)
+                this.combo(targetCardIndex, targetTileIndex, state, cardAttributes)
             }
         }
     }
 
-    ruleBasic = (cardIndex, tileIndex, state, cardId, cardAttributes) => {
+    ruleBasic = (cardIndex, tileIndex, state, cardAttributes) => {
         for (let direction = 0; direction < 4; direction++) {
             let targetTileIndex = Get[direction][tileIndex]
             if (targetTileIndex === -1) continue
             let targetCardIndex = state.tilesCard[targetTileIndex]
             if (targetCardIndex === -1 || state.cardsOwner[targetCardIndex] === state.current) continue
-            if (cardAttributes[cardId[cardIndex]][direction] >
-                cardAttributes[cardId[targetCardIndex]][Counter[direction]]) {
+            if (cardAttributes[cardIndex][direction] >
+                cardAttributes[targetCardIndex][Counter[direction]]) {
                 state.cardsOwner[targetCardIndex] = state.current
             }
         }

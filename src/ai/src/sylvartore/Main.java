@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.Date;
 
 public class Main {
-    public static void main(String[] args) throws  Exception{
+    public static void main(String[] args) {
         try {
             int port = 8002;
             ServerSocket server = new ServerSocket(port);

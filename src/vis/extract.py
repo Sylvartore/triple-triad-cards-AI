@@ -15,26 +15,23 @@ def extractCard():
                   'yellow': {'Lower': np.array([15, 40, 46]), 'Upper': np.array([18, 160, 255])}, }
 
     # pil_image = windowCapture()
-    pil_image = Image.open("./src/vis/test/2.png")
+    pil_image = Image.open("./src/vis/test/1.png")
     cv_image = pil_image.convert('RGB')
     frame = np.array(cv_image)[:, :, ::-1]
 
-    # 高斯模
     gs_frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    # 转化成HSV图像
     hsv = cv2.cvtColor(gs_frame, cv2.COLOR_BGR2HSV)
-    # 腐蚀 粗的变细
+
     # erode_hsv = cv2.erode(hsv, None, iterations=2)
     y_hsv = cv2.inRange(
         hsv, color_dist[ball_color]['Lower'], color_dist[ball_color]['Upper'])
 
     # cv2.imshow("image", y_hsv)
     # cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
     b_hsv = cv2.inRange(
         hsv, color_dist['blue']['Lower'], color_dist['blue']['Upper'])
-
     r_hsv = cv2.inRange(
         hsv, color_dist['red']['Lower'], color_dist['red']['Upper'])
 
