@@ -6,81 +6,104 @@ from PIL import Image
 import matplotlib.patches as patches
 from capture import windowCapture
 
+# 'red': {'Lower': np.array([0, 60, 60]), 'Upper': np.array([6, 255, 255])},
+# 'blue': {'Lower': np.array([100, 80, 46]), 'Upper': np.array([124, 255, 255])},
 
-def extractCard():
-    ball_color = 'yellow'
+colorRange = {
+    'normCard': {'Lower': np.array([15, 40, 46]), 'Upper': np.array([18, 160, 255])},
+    'rareCard': {'Lower': np.array([10, 0, 0]), 'Upper': np.array([25, 100, 255])},
+    'playerField': {'Lower': np.array([140, 0, 0]), 'Upper': np.array([160, 110, 255])},
+    'tileField': {'Lower': np.array([18, 0, 0]), 'Upper': np.array([35, 50, 255])},
+}
 
-    color_dist = {'red': {'Lower': np.array([0, 60, 60]), 'Upper': np.array([6, 255, 255])},
-                  'blue': {'Lower': np.array([100, 80, 46]), 'Upper': np.array([124, 255, 255])},
-                  'yellow': {'Lower': np.array([15, 40, 46]), 'Upper': np.array([18, 160, 255])}, }
+# todo: link to monitor resolution
+ratioRange = {
+    'normCard': (0.75, 0.81),
+    'rareCard': (0.75, 0.81),
+    'playerField':  (0.5, 2),
+    'tileField':  (0.5, 2)
+}
 
-    # pil_image = windowCapture()
-    pil_image = Image.open("./src/vis/test/1.png")
-    cv_image = pil_image.convert('RGB')
-    frame = np.array(cv_image)[:, :, ::-1]
+# todo: link to monitor resolution
+areaRange = {
+    'normCard':  (100 * 100, 120 * 120),
+    'rareCard': (100 * 100, 120 * 120),
+    'playerField':  (380*380, 1000 * 1000),
+    'tileField':  (300*300, 1000 * 1000),
+}
 
-    gs_frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    hsv = cv2.cvtColor(gs_frame, cv2.COLOR_BGR2HSV)
 
-    # erode_hsv = cv2.erode(hsv, None, iterations=2)
-    y_hsv = cv2.inRange(
-        hsv, color_dist[ball_color]['Lower'], color_dist[ball_color]['Upper'])
-
-    # cv2.imshow("image", y_hsv)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    b_hsv = cv2.inRange(
-        hsv, color_dist['blue']['Lower'], color_dist['blue']['Upper'])
-    r_hsv = cv2.inRange(
-        hsv, color_dist['red']['Lower'], color_dist['red']['Upper'])
-
-    # dst = cv2.addWeighted(y_hsv, 1, b_hsv, 1, 0)
-    # dst = cv2.addWeighted(y_hsv, 1, r_hsv, 1, 0)
-
-    # cv2.imshow("image", dst)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
+def findRect(hsv, target, results, baseX=0, baseY=0):
+    targetHsv = cv2.inRange(
+        hsv, colorRange[target]['Lower'], colorRange[target]['Upper'])
     cnts = cv2.findContours(
-        y_hsv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
-
-    # todo: link to pc resolution
-    minArea = 40 * 40
-    maxArea = 110 * 110
-
-    cardCoodinates = []
+        targetHsv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
     for cnt in cnts:
         x, y, w, h = cv2.boundingRect(cnt)
-        area = cv2.contourArea(cnt)
-        # if w/h > 0.75 and w/h < 0.85 and area > 100:
-        if w/h > 0.78 and w/h < 0.80 and area > minArea and area < maxArea:
-            cardCoodinates.append([x, y, w, h])
-            # print(w/h, " : ", area)
+        area = w*h
+        if area > areaRange[target][0] and area < areaRange[target][1]:
+            ratio = w/h
+            if ratio > ratioRange[target][0] and ratio < ratioRange[target][1]:
+                results.append([x + baseX, y + baseY, w, h])
+                # print(w/h, " : ", w, " : ", h, " : ", w*h)
 
-    rankCardsFromLeft = np.argsort([row[0] for row in cardCoodinates])
-    player0 = [cardCoodinates[index] for index in rankCardsFromLeft[:5]]
-    player1 = [cardCoodinates[index] for index in rankCardsFromLeft[5:]]
 
-    cardImages = [[pil_image.crop((x, y, x+w, y+h)) for x, y, w, h in player0],
-                  [pil_image.crop((x, y, x+w, y+h)) for x, y, w, h in player1]]
+def findCard(frame, field, results):
+    for x, y, w, h in field:
+        crop_frame = frame[y:y+h, x:x+w]
+        crop_gs = cv2.GaussianBlur(crop_frame, (5, 5), 0)
+        crop_hsv = cv2.cvtColor(crop_gs, cv2.COLOR_BGR2HSV)
+        findRect(crop_hsv, 'normCard',  results, x, y)
+        findRect(crop_hsv, 'rareCard', results, x, y)
 
-    if __name__ == "__main__" or len(cardCoodinates) != 10:
+
+def extractCard(path=None):
+    if path == None:
+        pil_image = windowCapture()
+    else:
+        pil_image = Image.open(path)
+
+    cv_image = pil_image.convert('RGB')
+
+    frame = np.array(cv_image)[:, :, ::-1]
+    gs_frame = cv2.GaussianBlur(frame, (5, 5), 0)
+    hsv = cv2.cvtColor(gs_frame, cv2.COLOR_BGR2HSV)
+    # erode_hsv = cv2.erode(hsv, None, iterations=2)
+
+    playerFields = []
+    tileFields = []
+    findRect(hsv, 'playerField',  playerFields)
+    findRect(hsv, 'tileField', tileFields)
+
+    cards = []
+    findCard(frame, playerFields, cards)
+    findCard(frame, tileFields, cards)
+
+    cardImgs = [pil_image.crop((x, y, x+w, y+h))
+                for x, y, w, h in cards]
+
+    if __name__ == "__main__" or len(cards) != 10:
         fig, ax = plt.subplots(1)
         plt.imshow(pil_image)
-        if len(cardCoodinates) != 10:
+        show = cards
+        if len(cards) != 10:
             plt.title("Card Extraction Failed!")
-        for x, y, w, h in cardCoodinates:
+        for x, y, w, h in show:
             rect = patches.Rectangle(
                 (x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
         plt.show()
-        if len(cardCoodinates) != 10:
+        if len(cards) != 10 and __name__ != "__main__":
             pil_image.save("./debug/failed_img_" +
                            str(len(os.listdir("./debug/"))) + ".png", "PNG")
-            return []
-    return cardImages
+        return []
+    return cardImgs
+
+
+def test():
+    for i in range(len(os.listdir("./debug/"))):
+        extractCard("./debug/failed_img_" + str(i) + ".png")
 
 
 if __name__ == "__main__":
-    extractCard()
+    test()

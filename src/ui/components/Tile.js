@@ -11,7 +11,7 @@ class Tile extends Component {
                         globalStates.state.tiles[this.props.id].card.owner ? "red" : "blue" : ""}`}
                         onClick={e => globalStates.place(e)} id={`t${this.props.id}`}>
                         {globalStates.state.tiles[this.props.id].card === null ? this.props.id :
-                            <img src={`./cards/imgs/${globalStates.state.tiles[this.props.id].card.id}.png`}
+                            <img src={`./cards/sourceImg/${globalStates.state.tiles[this.props.id].card.id}.png`}
                                 alt={globalStates.state.tiles[this.props.id].card.name} />}
                     </div>
                 }

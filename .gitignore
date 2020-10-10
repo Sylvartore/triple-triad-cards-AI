@@ -1,7 +1,8 @@
 node_modules
 debug/*
 
-public/cards/imgs/*
+public/cards/sourceImg/*
+public/cards/trainImg/*
 
 src/vis/__pycache__
 src/vis/test

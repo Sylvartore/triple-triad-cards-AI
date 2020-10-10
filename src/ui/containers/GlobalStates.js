@@ -78,6 +78,10 @@ class GlobalStates extends Container {
     }
 
     loadBoard = (data, time) => {
+        if (!data) {
+            console.log("Recognition failed")
+            return
+        }
         let players = JSON.parse(unescape(data.replace(/\\u/g, '%u')))
         if (!players || players.length === 0) {
             console.log("Recognition failed")
