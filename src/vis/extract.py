@@ -6,10 +6,10 @@ from PIL import Image
 import matplotlib.patches as patches
 from capture import windowCapture
 
-# 'red': {'Lower': np.array([0, 60, 60]), 'Upper': np.array([6, 255, 255])},
-# 'blue': {'Lower': np.array([100, 80, 46]), 'Upper': np.array([124, 255, 255])},
 
 colorRange = {
+    'red': {'Lower': np.array([0, 100, 100]), 'Upper': np.array([6, 200, 200])},
+    'blue': {'Lower': np.array([101, 100, 100]), 'Upper': np.array([106, 200, 200])},
     'normCard': {'Lower': np.array([15, 40, 46]), 'Upper': np.array([18, 160, 255])},
     'rareCard': {'Lower': np.array([10, 0, 0]), 'Upper': np.array([25, 100, 255])},
     'playerField': {'Lower': np.array([140, 0, 0]), 'Upper': np.array([160, 110, 255])},
@@ -44,8 +44,8 @@ def findRect(hsv, target, results, baseX=0, baseY=0):
         if area > areaRange[target][0] and area < areaRange[target][1]:
             ratio = w/h
             if ratio > ratioRange[target][0] and ratio < ratioRange[target][1]:
+                #print(w/h, " : ", w, " : ", h, " : ", w*h)
                 results.append([x + baseX, y + baseY, w, h])
-                # print(w/h, " : ", w, " : ", h, " : ", w*h)
 
 
 def findCard(frame, field, results):
@@ -54,7 +54,22 @@ def findCard(frame, field, results):
         crop_gs = cv2.GaussianBlur(crop_frame, (5, 5), 0)
         crop_hsv = cv2.cvtColor(crop_gs, cv2.COLOR_BGR2HSV)
         findRect(crop_hsv, 'normCard',  results, x, y)
-        findRect(crop_hsv, 'rareCard', results, x, y)
+        findRect(crop_hsv, 'rareCard', results,  x, y)
+
+
+def determinPlayerNo(frame, x, y, w, h):
+    crop_frame = frame[y:y+h, x:x+w]
+    crop_gs = cv2.GaussianBlur(crop_frame, (5, 5), 0)
+    crop_hsv = cv2.cvtColor(crop_gs, cv2.COLOR_BGR2HSV)
+    blueArea = calculateColorArea(crop_hsv, "blue")
+    redArea = calculateColorArea(crop_hsv, "red")
+    return 0 if blueArea > redArea else 1
+
+
+def calculateColorArea(hsv, color):
+    targetHsv = cv2.inRange(
+        hsv, colorRange[color]['Lower'], colorRange[color]['Upper'])
+    return cv2.countNonZero(targetHsv)
 
 
 def extractCard(path=None):
@@ -71,29 +86,32 @@ def extractCard(path=None):
     # erode_hsv = cv2.erode(hsv, None, iterations=2)
 
     playerFields = []
-    tileFields = []
     findRect(hsv, 'playerField',  playerFields)
+
+    tileFields = []
     findRect(hsv, 'tileField', tileFields)
 
-    cards = []
-    findCard(frame, playerFields, cards)
-    findCard(frame, tileFields, cards)
+    cardCoordinate = []
+    findCard(frame, playerFields, cardCoordinate)
+    findCard(frame, tileFields, cardCoordinate)
 
-    cardImgs = [pil_image.crop((x, y, x+w, y+h))
-                for x, y, w, h in cards]
+    cardImgs = [[], []]
+    for x, y, w, h in cardCoordinate:
+        playerNo = determinPlayerNo(frame, x, y, w, h)
+        cardImgs[playerNo].append(pil_image.crop((x, y, x+w, y+h)))
 
-    if __name__ == "__main__" or len(cards) != 10:
+    if __name__ == "__main__" or len(cardCoordinate) != 10:
         fig, ax = plt.subplots(1)
         plt.imshow(pil_image)
-        show = cards
-        if len(cards) != 10:
+        show = cardCoordinate
+        if len(cardCoordinate) != 10:
             plt.title("Card Extraction Failed!")
-        for x, y, w, h in show:
+        for x, y, w, h in cardCoordinate:
             rect = patches.Rectangle(
                 (x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
         plt.show()
-        if len(cards) != 10 and __name__ != "__main__":
+        if len(cardCoordinate) != 10 and __name__ != "__main__":
             pil_image.save("./debug/failed_img_" +
                            str(len(os.listdir("./debug/"))) + ".png", "PNG")
         return []

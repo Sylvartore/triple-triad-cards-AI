@@ -4,7 +4,7 @@ import os
 import h5py
 import numpy as np
 from keras.preprocessing import image
-from model.model import VGGNet
+from model import VGGNet
 from PIL import Image, ImageDraw
 
 
@@ -51,8 +51,9 @@ def preProcessImg():
         for key in color:
             new_image = Image.new("RGBA", image.size, color[key])
             new_image.paste(image, (0, 0), image)
-            new_image.convert('RGB').save(
-                save + key + img_name[:-4] + ".jpg", "JPEG")
+            new_image = new_image.convert('RGB')
+            ImageDraw.floodfill(new_image, (0, 0), (136, 97, 148), thresh=0)
+            new_image.save(save + key + img_name[:-4] + ".jpg", "JPEG")
 
 
 if __name__ == "__main__":
